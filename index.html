@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>塔罗神谕</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="stars-canvas"></canvas>
+<div id="app">
+
+<!-- ═══════ INTRO ═══════ -->
+<div id="intro">
+  <div class="intro-glyph">☽✦☾</div>
+  <h1 class="intro-title">塔罗神谕</h1>
+  <p class="intro-sub">Ancient Wisdom Revealed</p>
+  <button class="enter-btn" onclick="enterApp()">✦ 进入神谕 ✦</button>
+  <div style="margin-top:1.5rem;display:flex;gap:.8rem;justify-content:center">
+    <button onclick="copyLink()" style="padding:.5rem 1rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:var(--gold);border-radius:20px;font-size:.75rem;cursor:pointer;display:flex;align-items:center;gap:.3rem"
+      onmouseover="this.style.background='rgba(201,168,76,.15)'" onmouseout="this.style.background='rgba(201,168,76,.08)'"
+    >
+      📋 复制分享链接
+    </button>
+  </div>
+  <div id="auto-enter-hint" style="margin-top:1rem;font-size:.75rem;color:var(--text2);opacity:.6">2秒后自动进入...</div>
+</div>
+
+<!-- ═══════ MAIN ═══════ -->
+<div id="main">
+
+  <header class="header">
+    <div class="header-title">☽ 塔罗神谕 ☾</div>
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <button onclick="openSettings()" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:.3rem" title="设置"
+        onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text2)'"
+      >⚙</button>
+      <div class="desktop-nav">
+      <button class="nav-btn active" id="nav-reading" onclick="showPanel('reading')">占卜</button>
+      <button class="nav-btn" id="nav-history" onclick="showPanel('history')">历史</button>
+      <button class="nav-btn" id="nav-stats" onclick="showPanel('stats')">统计</button>
+      <button class="nav-btn" id="nav-favorites" onclick="showPanel('favorites')">收藏</button>
+      <button class="nav-btn" id="nav-gallery" onclick="showPanel('gallery')">牌库</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Daily Banner -->
+  <div style="max-width:900px;margin:0 auto">
+    <div id="daily-banner" style="display:none;margin:.6rem .75rem 0;padding:.9rem 1rem;background:linear-gradient(135deg,rgba(107,63,160,.15),rgba(201,168,76,.08));border:1px solid rgba(155,111,212,.25);border-radius:12px;cursor:pointer"></div>
+    <div id="daily-detail" style="display:none"></div>
+  </div>
+
+  <!-- ═══ Reading Panel ═══ -->
+  <div id="panel-reading" class="panel active">
+    <div class="controls-bar">
+      <div class="section-label">你的问题</div>
+      <textarea class="question-input" id="question-input" rows="2" placeholder="心中默想你的问题，或留空让牌自己说话..."></textarea>
+
+      <div class="section-label">选择牌阵</div>
+      <div class="spread-grid" id="spread-grid"></div>
+
+      <button class="shuffle-btn" id="shuffle-btn" onclick="startReading()">✦ 洗牌抽牌 ✦</button>
+    </div>
+
+    <div id="card-stage"></div>
+
+    <div id="action-bar" style="text-align:center;display:none;margin:1rem .5rem">
+      <button onclick="revealAll()" class="shuffle-btn" style="margin-bottom:.6rem">✦ 揭示牌义 ✦</button>
+      <button onclick="resetReading()" style="width:100%;padding:.9rem;background:transparent;border:1px solid rgba(201,168,76,.25);color:var(--text2);border-radius:12px;font-size:.95rem">重新抽牌</button>
+    </div>
+
+    <div id="readings-output"></div>
+  </div>
+
+  <!-- ═══ History Panel ═══ -->
+  <div id="panel-history" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding:0 .25rem">
+      <div class="panel-title">✦ 占卜历史</div>
+      <button onclick="Stats.clearHistory(); Stats.renderHistoryPanel(); showNotif('历史已清空');" style="padding:.4rem .8rem;background:transparent;border:1px solid rgba(192,57,43,.4);color:var(--red);border-radius:8px;font-size:.8rem;-webkit-appearance:none">清空</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- ═══ Stats Panel ═══ -->
+  <div id="panel-stats" class="panel">
+    <div class="panel-title" style="padding:0 .25rem">✦ 数据统计</div>
+    <div id="stats-content"></div>
+  </div>
+
+  <!-- ═══ Favorites Panel ═══ -->
+  <div id="panel-favorites" class="panel">
+    <div class="panel-title" style="padding:0 .25rem">✦ 收藏与笔记</div>
+    <div id="favorites-list"></div>
+  </div>
+
+  <!-- ═══ Gallery Panel ═══ -->
+  <div id="panel-gallery" class="panel">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div class="panel-title" style="margin-bottom:.3rem">✦ 牌库 ✦</div>
+      <div style="color:var(--text2);font-size:.8rem">78张塔罗牌 · 点击 ♡ 收藏</div>
+    </div>
+    <div id="gallery-content"></div>
+  </div>
+
+</div><!-- #main -->
+
+<!-- ═══ Bottom Tab Bar ═══ -->
+<nav class="tab-bar" id="tab-bar">
+  <button class="tab-item active" data-panel="reading" onclick="showPanel('reading')">
+    <span class="tab-icon">🔮</span>
+    <span>占卜</span>
+  </button>
+  <button class="tab-item" data-panel="history" onclick="showPanel('history')">
+    <span class="tab-icon">📜</span>
+    <span>历史</span>
+  </button>
+  <button class="tab-item" data-panel="stats" onclick="showPanel('stats')">
+    <span class="tab-icon">📊</span>
+    <span>统计</span>
+  </button>
+  <button class="tab-item" data-panel="favorites" onclick="showPanel('favorites')">
+    <span class="tab-icon">♥</span>
+    <span>收藏</span>
+  </button>
+  <button class="tab-item" data-panel="gallery" onclick="showPanel('gallery')">
+    <span class="tab-icon">🃏</span>
+    <span>牌库</span>
+  </button>
+</nav>
+
+</div><!-- #app -->
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeSettings()">✕</button>
+    <div style="color:var(--gold);font-size:1rem;font-weight:600;margin-bottom:1rem;letter-spacing:.1em">⚙ 设置</div>
+    <div id="settings-content"></div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/features.js"></script>
+<script src="js/ai.js"></script>
+<script>
+/* ===== PWA ===== */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* ===== Auto enter ===== */
+let autoEnterTimer = setTimeout(() => {
+  const intro = document.getElementById('intro');
+  if (intro && intro.style.display !== 'none') {
+    enterApp();
+  }
+}, 2000);
+
+/* ===== Copy Link ===== */
+function copyLink() {
+  const url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      showNotif('链接已复制 ✓');
+    }).catch(() => {
+      fallbackCopy(url);
+    });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showNotif('链接已复制 ✓');
+  } catch {
+    showNotif('复制失败，请手动复制');
+  }
+  document.body.removeChild(ta);
+}
+
+/* ===== Stars Canvas ===== */
+const canvas = document.getElementById('stars-canvas');
+const ctx = canvas.getContext('2d');
+let stars = [];
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+function initStars() {
+  const count = window.innerWidth < 768 ? 60 : 120;
+  stars = Array.from({length: count}, () => ({
+    x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+    r: Math.random()*1.2+.3, speed: Math.random()*.2+.05, opacity: Math.random()
+  }));
+}
+function drawStars() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  stars.forEach(s => {
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(201,168,76,${s.opacity})`; ctx.fill();
+    s.y -= s.speed;
+    if(s.y<0){s.y=canvas.height;s.x=Math.random()*canvas.width;}
+    s.opacity += (Math.random()-.5)*.015;
+    s.opacity = Math.max(.1, Math.min(.7, s.opacity));
+  });
+  requestAnimationFrame(drawStars);
+}
+resizeCanvas(); initStars(); drawStars();
+window.addEventListener('resize', () => { resizeCanvas(); initStars(); });
+
+/* ===== Navigation ===== */
+function enterApp(auto) {
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('main').style.display = 'flex';
+  DailyCard.renderBanner();
+  DailyCard.scheduleDailyNotification();
+  renderSpreadGrid();
+  renderGallery();
+}
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('panel-'+name).classList.add('active');
+  const navBtn = document.getElementById('nav-'+name);
+  if (navBtn) navBtn.classList.add('active');
+  const tabBtn = document.querySelector('.tab-item[data-panel="'+name+'"]');
+  if (tabBtn) tabBtn.classList.add('active');
+
+  if (name === 'history') Stats.renderHistoryPanel();
+  if (name === 'stats') Stats.renderStatsPanel();
+  if (name === 'favorites') Favorites.renderFavoritesPanel();
+  if (name === 'gallery') renderGallery();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeModal() {
+  document.getElementById('detail-modal').style.display = 'none';
+}
+
+/* ===== Swipe Gesture ===== */
+let touchStartX = 0;
+let touchEndX = 0;
+const panels = ['reading', 'history', 'stats', 'favorites', 'gallery'];
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+}, { passive: true });
+
+/* ===== Fan Drag Global Events ===== */
+window.addEventListener('mousemove', handleFanDragMove);
+window.addEventListener('mouseup', handleFanDragEnd);
+
+function handleSwipe() {
+  const diff = touchStartX - touchEndX;
+  if (Math.abs(diff) < 60) return;
+
+  const activePanel = document.querySelector('.panel.active');
+  if (!activePanel) return;
+  const currentId = activePanel.id.replace('panel-', '');
+  const idx = panels.indexOf(currentId);
+  if (idx === -1) return;
+
+  if (diff > 0 && idx < panels.length - 1) showPanel(panels[idx + 1]);
+  if (diff < 0 && idx > 0) showPanel(panels[idx - 1]);
+}
+
+/* ===== Spread Selection ===== */
+let currentSpread = SPREADS[0];
+
+function renderSpreadGrid() {
+  const grid = document.getElementById('spread-grid');
+  grid.innerHTML = SPREADS.map(s => `
+    <button class="spread-btn ${s.id === currentSpread.id ? 'active' : ''}" onclick="selectSpread('${s.id}')">
+      <div style="font-size:1.4rem;margin-bottom:.2rem">${getSpreadIcon(s.id)}</div>
+      <div style="font-size:.85rem;font-weight:500">${s.nameCN}</div>
+      <div style="font-size:.65rem;opacity:.6;margin-top:.1rem">${s.cardCount}张 · ${s.descCN}</div>
+    </button>
+  `).join('');
+}
+
+function getSpreadIcon(id) {
+  const icons = { single: '✦', three: '☰', celtic: '✶', relationship: '♥', horseshoe: '∩' };
+  return icons[id] || '◈';
+}
+
+function selectSpread(id) {
+  currentSpread = SPREADS.find(s => s.id === id);
+  renderSpreadGrid();
+}
+
+/* ===== Reading Logic (Enhanced) ===== */
+let drawnCards = [];
+let drawProgress = 0;
+let isRevealed = false;
+let fanOffset = 0;
+let fanDragging = false;
+let fanStartX = 0;
+let fanCurrentX = 0;
+let fanCardsCount = 0;
+let fanSelectedIndex = 0;
+
+function startReading() {
+  const stage = document.getElementById('card-stage');
+  stage.style.display = 'flex'; stage.style.flexDirection = 'column';
+  document.getElementById('readings-output').innerHTML = '';
+  document.getElementById('action-bar').style.display = 'none';
+  isRevealed = false; drawProgress = 0;
+
+  // Show shuffling animation with more cards
+  let shuffleHTML = '<div class="deck-area"><div class="deck-glow"></div>';
+  shuffleHTML += '<div class="deck-pile-wrap shuffle-anim" id="shuffle-deck" style="width:120px;height:190px">';
+  for (let i = 0; i < 8; i++) {
+    const rot = (Math.random() - 0.5) * 8;
+    const top = Math.random() * 6;
+    const left = (Math.random() - 0.5) * 4;
+    shuffleHTML += `<div class="deck-pile-card" style="transform:rotate(${rot}deg);top:${top}px;left:${left}px;z-index:${8-i}"></div>`;
+  }
+  shuffleHTML += '</div>';
+  shuffleHTML += '<div class="deck-progress">🔮 正在洗牌...</div>';
+  shuffleHTML += '<div class="deck-hint">✦ 集中精神，默念你的问题 ✦</div>';
+  shuffleHTML += '</div>';
+  stage.innerHTML = shuffleHTML;
+
+  // Prepare deck
+  drawnCards = [];
+  const deck = [...TAROT_DATA.all];
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  for (let i = 0; i < currentSpread.cardCount; i++) {
+    const card = { ...deck[i], isReversed: Math.random() > 0.7, position: currentSpread.positions[i] };
+    drawnCards.push(card);
+  }
+
+  // Play shuffle sound
+  playSound('shuffle');
+
+  setTimeout(() => renderFanDeck(), 2500);
+}
+
+function renderFanDeck() {
+  const stage = document.getElementById('card-stage');
+  const remaining = currentSpread.cardCount - drawProgress;
+
+  // Build fan deck area
+  let html = '<div class="deck-progress">';
+  html += `${currentSpread.nameCN} · 还需选择 ${remaining} 张牌`;
+  html += '</div>';
+
+  html += '<div class="fan-deck-area" id="fan-deck-area">';
+  html += '<div class="fan-track" id="fan-track"></div>';
+  html += '</div>';
+
+  html += `<div class="deck-hint" id="draw-hint">👆 左右滑动选择一张牌 · 已选 ${drawProgress}/${currentSpread.cardCount}</div>`;
+  html += '<div class="drawn-slots" id="drawn-slots"></div>';
+
+  stage.innerHTML = html;
+  renderEmptySlots();
+  buildFanCards();
+  attachFanEvents();
+}
+
+function buildFanCards() {
+  const track = document.getElementById('fan-track');
+  if (!track) return;
+
+  const remaining = currentSpread.cardCount - drawProgress;
+  // Show at least 8 cards, or remaining+4 to make fan look full
+  fanCardsCount = Math.max(remaining + 4, 8);
+
+  let cardsHTML = '';
+  for (let i = 0; i < fanCardsCount; i++) {
+    cardsHTML += `<div class="fan-card" data-index="${i}"></div>`;
+  }
+  track.innerHTML = cardsHTML;
+
+  fanOffset = 0;
+  fanSelectedIndex = Math.floor(fanCardsCount / 2);
+  updateFanTransforms();
+}
+
+function updateFanTransforms() {
+  const cards = document.querySelectorAll('.fan-card');
+  if (!cards.length) return;
+
+  const count = cards.length;
+  const maxAngle = 100; // total spread angle in degrees
+  const angleStep = count > 1 ? maxAngle / (count - 1) : 0;
+  const radius = 90;
+
+  cards.forEach((card, i) => {
+    const baseAngle = -maxAngle / 2 + i * angleStep;
+    const angle = baseAngle + fanOffset;
+    const isActive = i === fanSelectedIndex;
+
+    card.classList.toggle('active', isActive);
+
+    // Active card comes forward (larger, higher)
+    const scale = isActive ? 1.12 : 1;
+    const lift = isActive ? -14 : 0;
+    const zIndex = isActive ? 100 : 50 - Math.abs(i - fanSelectedIndex);
+
+    card.style.zIndex = zIndex;
+    card.style.transform = `rotate(${angle}deg) translateY(${-radius + lift}px) scale(${scale})`;
+  });
+}
+
+function attachFanEvents() {
+  const area = document.getElementById('fan-deck-area');
+  if (!area) return;
+
+  area.addEventListener('touchstart', handleFanDragStart, { passive: false });
+  area.addEventListener('touchmove', handleFanDragMove, { passive: false });
+  area.addEventListener('touchend', handleFanDragEnd);
+  area.addEventListener('mousedown', handleFanDragStart);
+
+  // Click on a card to select it
+  area.addEventListener('click', (e) => {
+    const card = e.target.closest('.fan-card');
+    if (!card || fanDragging) return;
+    const idx = parseInt(card.dataset.index, 10);
+    if (idx === fanSelectedIndex) {
+      selectFromFan();
+    } else {
+      fanSelectedIndex = idx;
+      updateFanTransforms();
+    }
+  });
+}
+
+function handleFanDragStart(e) {
+  if (drawProgress >= currentSpread.cardCount) return;
+  fanDragging = true;
+  fanStartX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+  fanCurrentX = fanStartX;
+}
+
+function handleFanDragMove(e) {
+  if (!fanDragging) return;
+  e.preventDefault();
+  const x = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+  const delta = x - fanCurrentX;
+  fanCurrentX = x;
+
+  // Map pixel delta to angle delta (sensitivity)
+  fanOffset += delta * 0.35;
+
+  // Clamp offset so fan doesn't spin wildly
+  const maxOffset = 60;
+  fanOffset = Math.max(-maxOffset, Math.min(maxOffset, fanOffset));
+
+  updateFanTransforms();
+}
+
+function handleFanDragEnd(e) {
+  if (!fanDragging) return;
+  fanDragging = false;
+
+  // Snap to nearest card based on which card is closest to 0 deg
+  const cards = document.querySelectorAll('.fan-card');
+  if (!cards.length) return;
+
+  const count = cards.length;
+  const maxAngle = 100;
+  const angleStep = count > 1 ? maxAngle / (count - 1) : 0;
+
+  let bestIndex = 0;
+  let bestDiff = Infinity;
+  cards.forEach((card, i) => {
+    const baseAngle = -maxAngle / 2 + i * angleStep;
+    const finalAngle = baseAngle + fanOffset;
+    const diff = Math.abs(finalAngle);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIndex = i;
+    }
+  });
+
+  fanSelectedIndex = bestIndex;
+  // Animate offset to center the selected card
+  const baseAngle = -maxAngle / 2 + bestIndex * angleStep;
+  const targetOffset = -baseAngle;
+
+  const startOffset = fanOffset;
+  const startTime = performance.now();
+  const duration = 250;
+
+  function snapAnimate(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    fanOffset = startOffset + (targetOffset - startOffset) * ease;
+    updateFanTransforms();
+    if (t < 1) requestAnimationFrame(snapAnimate);
+  }
+  requestAnimationFrame(snapAnimate);
+}
+
+function selectFromFan() {
+  if (drawProgress >= currentSpread.cardCount) return;
+
+  const idx = drawProgress;
+  const card = drawnCards[idx];
+  drawProgress++;
+
+  // Haptic feedback
+  if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
+  playSound('draw');
+
+  // Find the active fan card to fly from
+  const activeCard = document.querySelector('.fan-card.active');
+  const slotEl = document.getElementById('slot-' + idx);
+  if (!activeCard || !slotEl) return;
+
+  const cardRect = activeCard.getBoundingClientRect();
+  const slotRect = slotEl.getBoundingClientRect();
+
+  // Create flying card from the active card position
+  const flyer = document.createElement('div');
+  flyer.className = 'flying-card';
+  flyer.style.left = cardRect.left + 'px';
+  flyer.style.top = cardRect.top + 'px';
+  flyer.style.width = cardRect.width + 'px';
+  flyer.style.height = cardRect.height + 'px';
+  document.body.appendChild(flyer);
+
+  createSparkles(cardRect.left + cardRect.width / 2, cardRect.top + cardRect.height / 2);
+
+  // Animate fly from card to slot
+  const startX = cardRect.left;
+  const startY = cardRect.top;
+  const endX = slotRect.left;
+  const endY = slotRect.top;
+  const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 60;
+  const midY = Math.min(startY, endY) - 80;
+
+  const duration = 600;
+  const startTime = performance.now();
+
+  function animate(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    const t = ease;
+    const x = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * midX + t * t * endX;
+    const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * midY + t * t * endY;
+    const scale = 1 - ease * 0.15;
+    const rotate = ease * (Math.random() - 0.5) * 20;
+
+    flyer.style.left = x + 'px';
+    flyer.style.top = y + 'px';
+    flyer.style.transform = `scale(${scale}) rotate(${rotate}deg)`;
+    flyer.style.opacity = progress > 0.8 ? 1 - (progress - 0.8) * 5 : 1;
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      flyer.remove();
+      renderCardInSlot(idx, card);
+      updateFanAfterSelect();
+    }
+  }
+  requestAnimationFrame(animate);
+
+  // Mark active card as removing, sync with fly animation
+  if (activeCard) {
+    activeCard.classList.add('removing');
+    setTimeout(() => {
+      if (activeCard.parentNode) activeCard.remove();
+    }, 600);
+  }
+
+  // Update hint
+  const hint = document.getElementById('draw-hint');
+  if (hint) {
+    if (drawProgress >= currentSpread.cardCount) {
+      hint.innerHTML = '✦ 抽牌完成！点击下方按钮揭示牌义';
+      hint.style.color = 'var(--gold)';
+      hint.style.animation = 'none';
+    } else {
+      hint.innerHTML = `👆 左右滑动选择一张牌 · 已选 ${drawProgress}/${currentSpread.cardCount}`;
+    }
+  }
+
+  // Update progress
+  const progress = document.querySelector('.deck-progress');
+  if (progress) {
+    const remaining = currentSpread.cardCount - drawProgress;
+    progress.innerHTML = `${currentSpread.nameCN} · 还需选择 ${remaining} 张牌`;
+  }
+
+  // Shake remaining fan cards
+  const track = document.getElementById('fan-track');
+  if (track) {
+    track.classList.add('shuffle-anim');
+    setTimeout(() => track.classList.remove('shuffle-anim'), 400);
+  }
+
+  // Auto reveal when all drawn
+  if (drawProgress >= currentSpread.cardCount) {
+    setTimeout(() => {
+      document.getElementById('action-bar').style.display = 'block';
+      document.getElementById('action-bar').innerHTML = `
+        <button onclick="revealAll()" class="shuffle-btn">✦ 揭示牌义 ✦</button>
+      `;
+    }, 700);
+  }
+}
+
+function updateFanAfterSelect() {
+  // Rebuild fan with one less card, keeping the selection near center
+  const track = document.getElementById('fan-track');
+  if (!track) return;
+
+  const cards = track.querySelectorAll('.fan-card:not(.removing)');
+  const remaining = currentSpread.cardCount - drawProgress;
+
+  if (cards.length <= 1 && remaining > 0) {
+    // Refill fan when nearly empty
+    buildFanCards();
+    return;
+  }
+
+  // Recalculate indices and center the new selection
+  fanCardsCount = cards.length;
+  fanSelectedIndex = Math.floor(fanCardsCount / 2);
+  fanOffset = 0;
+
+  // Re-assign data-index for correct click handling
+  cards.forEach((card, i) => {
+    card.dataset.index = i;
+  });
+
+  updateFanTransforms();
+}
+
+function renderEmptySlots() {
+  const container = document.getElementById('drawn-slots');
+  if (!container) return;
+  container.innerHTML = drawnCards.map((c, i) => `
+    <div class="draw-slot ${i < drawProgress ? 'filled' : ''}" id="slot-${i}">
+      <div class="slot-placeholder"><span class="slot-num">${i+1}</span></div>
+      <div class="slot-name">${c.position.nameCN}</div>
+    </div>
+  `).join('');
+}
+
+function renderCardInSlot(idx, card) {
+  const slot = document.getElementById('slot-' + idx);
+  if (!slot) return;
+
+  slot.classList.add('filled', 'highlight', 'receive-glow');
+  slot.innerHTML = `
+    <div class="tarot-card" id="card-${idx}" style="width:78px;height:130px">
+      <div class="tarot-card-inner">
+        <div class="card-face card-back"></div>
+        <div class="card-face card-front ${card.isReversed ? 'reversed' : ''}">
+          <div class="cf-name-cn">${card.nameCN}</div>
+          <div class="cf-name">${card.name}</div>
+          <div class="cf-keywords">${card.keywordsCN.slice(0,2).map(k=>`<span>${k}</span>`).join('')}</div>
+          ${card.isReversed ? '<div class="rev-tag">逆位</div>' : ''}
+        </div>
+      </div>
+    </div>
+    <div class="position-label">${card.position.nameCN}</div>
+    <div id="fav-btn-${idx}" style="margin-top:.2rem"></div>
+  `;
+
+  // Animate card appearance
+  const cardEl = slot.querySelector('.tarot-card');
+  if (cardEl) {
+    cardEl.style.opacity = '0';
+    cardEl.style.transform = 'scale(0.8)';
+    setTimeout(() => {
+      cardEl.style.transition = 'all .4s cubic-bezier(.34,1.56,.64,1)';
+      cardEl.style.opacity = '1';
+      cardEl.style.transform = 'scale(1)';
+    }, 50);
+  }
+}
+
+function createSparkles(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle-particle';
+    const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.5;
+    const distance = 30 + Math.random() * 40;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+
+    sparkle.style.left = x + 'px';
+    sparkle.style.top = y + 'px';
+    sparkle.style.transition = 'all .6s ease-out';
+    document.body.appendChild(sparkle);
+
+    requestAnimationFrame(() => {
+      sparkle.style.transform = `translate(${tx}px, ${ty}px) scale(0)`;
+      sparkle.style.opacity = '0';
+    });
+
+    setTimeout(() => sparkle.remove(), 600);
+  }
+}
+
+// Simple sound effects using Web Audio API
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'shuffle') {
+      // White noise burst for shuffle
+      const bufferSize = audioCtx.sampleRate * 0.3;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0.05;
+      noise.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.start();
+    } else if (type === 'draw') {
+      // High pitch chime for draw
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'reveal') {
+      // Magical chord for reveal
+      [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.type = 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+        g.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + i * 0.1 + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.5);
+        o.start(audioCtx.currentTime + i * 0.1);
+        o.stop(audioCtx.currentTime + i * 0.1 + 0.5);
+      });
+    }
+  } catch (e) {}
+}
+
+function flipCard(index) {
+  const el = document.getElementById('card-'+index);
+  if (!el || el.classList.contains('flipped')) return;
+  el.classList.add('flipped');
+  const card = drawnCards[index];
+  setTimeout(() => Favorites.renderFavoriteButton(card.id, 'fav-btn-'+index), 400);
+}
+
+function revealAll() {
+  playSound('reveal');
+  drawnCards.forEach((c, i) => setTimeout(() => flipCard(i), i * 180));
+  setTimeout(() => renderReadings(), drawnCards.length * 180 + 500);
+  document.getElementById('action-bar').style.display = 'none';
+}
+
+function renderReadings() {
+  const output = document.getElementById('readings-output');
+  const question = document.getElementById('question-input').value;
+
+  let html = '';
+  drawnCards.forEach((c, i) => {
+    html += `
+      <div class="reading-block" style="animation-delay:${i*.08}s">
+        <div class="rb-pos">${c.position ? c.position.nameCN : '牌'}</div>
+        <div class="rb-title">${c.nameCN} ${c.isReversed ? '<span style="color:var(--red);font-size:.75rem;margin-left:.3rem">逆位</span>' : ''}</div>
+        <div style="display:flex;gap:.3rem;margin:.4rem 0;flex-wrap:wrap">
+          ${c.keywordsCN.map(k => `<span style="font-size:.7rem;padding:.15rem .5rem;border:1px solid rgba(201,168,76,.25);border-radius:12px;color:var(--text2);background:rgba(201,168,76,.06)">${k}</span>`).join('')}
+        </div>
+        <div class="rb-meaning">${c.isReversed ? c.meaningReversedCN : c.meaningUprightCN}</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-top:.4rem;font-style:italic">${c.isReversed ? c.meaningReversed : c.meaningUpright}</div>
+      </div>
+    `;
+  });
+
+  html += `
+    <div class="summary-block">
+      <h3 style="color:var(--purple2);letter-spacing:.08em;margin-bottom:.6rem;font-size:.95rem;font-weight:600">✦ 综合解读</h3>
+      <div class="rb-meaning">${generateSummary(question, drawnCards)}</div>
+    </div>
+    <button class="deep-reading-btn" onclick="toggleDeepReading()">
+      <span class="sparkle">✨</span> 本地深度解读 · 牌阵模板分析
+    </button>
+    <button class="deep-reading-btn" onclick="toggleAIReading()" style="background:linear-gradient(135deg,rgba(107,63,160,.4),rgba(201,168,76,.2));border-color:var(--purple2)">
+      <span class="sparkle">🤖</span> AI 深度解读 · Claude 智能分析
+      <div style="font-size:.75rem;color:var(--text2);margin-top:.2rem;font-weight:normal">基于你的具体问题生成个性化解读</div>
+    </button>
+    <div id="deep-reading-area" style="display:none"></div>
+    <div id="ai-reading-area" style="display:none"></div>
+    <div style="text-align:center;margin:1.5rem 0">
+      <button onclick="resetReading()" style="padding:.7rem 1.5rem;background:transparent;border:1px solid rgba(201,168,76,.2);color:var(--text2);border-radius:20px;font-size:.85rem;-webkit-appearance:none"
+        onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+        onmouseout="this.style.borderColor='rgba(201,168,76,.2)';this.style.color='var(--text2)'"
+      >↻ 重新占卜</button>
+    </div>
+  `;
+
+  output.innerHTML = html;
+  Stats.addRecord(currentSpread.id, question, drawnCards);
+  isRevealed = true;
+}
+
+function toggleAIReading() {
+  const area = document.getElementById('ai-reading-area');
+  if (!area) return;
+  if (area.style.display === 'block') {
+    area.style.display = 'none';
+  } else {
+    streamDeepReading(drawnCards, currentSpread.id, document.getElementById('question-input').value, 'ai-reading-area');
+  }
+}
+
+function toggleDeepReading() {
+  const area = document.getElementById('deep-reading-area');
+  if (!area) return;
+  if (area.style.display === 'block') {
+    area.style.display = 'none';
+  } else {
+    area.innerHTML = generateDeepReading(drawnCards, currentSpread.id, document.getElementById('question-input').value);
+    area.style.display = 'block';
+    setTimeout(() => area.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+}
+
+function generateDeepReading(cards, spreadId, question) {
+  const topic = detectTopic(question);
+  const q = question || '你心中所想';
+  let html = '<div class="deep-reading-content">';
+
+  html += `
+    <div class="deep-section" style="text-align:center;border-bottom:none;margin-bottom:.5rem">
+      <div style="color:var(--gold);font-size:.7rem;letter-spacing:.15em;margin-bottom:.3rem">🔮 深度解读</div>
+      <div style="color:var(--text2);font-size:.85rem;font-style:italic">「${q}」</div>
+    </div>
+  `;
+
+  cards.forEach((card, i) => {
+    const scene = getCardScene(card, card.position, topic);
+    if (!scene) return;
+
+    html += `
+      <div class="deep-section">
+        <div class="deep-section-title">
+          <span style="font-size:1.2rem">${card.isReversed ? '🔃' : '✨'}</span>
+          ${card.position ? card.position.nameCN : '第'+(i+1)+'张'} · ${card.nameCN}
+        </div>
+        <div class="deep-section-text">
+          <p style="margin-bottom:.6rem;color:var(--gold2);font-size:.9rem">${scene.intro}</p>
+          <p style="line-height:1.9">${scene.body}</p>
+        </div>
+      </div>
+    `;
+  });
+
+  const mainCards = cards.filter(c => CARD_SCENES[c.name]);
+  if (mainCards.length > 0) {
+    const adviceCards = mainCards.slice(0, 2);
+    html += `
+      <div class="deep-section" style="background:rgba(107,63,160,.1);border:1px solid rgba(155,111,212,.2);border-radius:12px;padding:1.2rem">
+        <div class="deep-section-title" style="color:var(--purple2)">💡 给「${q}」的具体建议</div>
+        <div class="deep-section-text" style="font-size:.9rem;line-height:2">
+          ${adviceCards.map(c => {
+            const scene = CARD_SCENES[c.name];
+            return scene ? `<p style="margin-bottom:.8rem">${scene.advice}</p>` : '';
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  const reversedCards = cards.filter(c => c.isReversed);
+  const summaryTone = reversedCards.length > cards.length/2
+    ? '这段时期可能需要你多一点耐心和自省，但每一张逆位牌都是一份礼物——它在帮你看到自己还没处理好的部分。'
+    : reversedCards.length > 0
+    ? '整体能量流动顺畅，即使有几张逆位牌，也只是提醒你注意几个小细节。大方向是好的。'
+    : '牌面整体能量非常积极，这是一个适合行动、适合推进、适合相信自己的时期。';
+
+  html += `
+    <div class="deep-section" style="border-bottom:none">
+      <div class="deep-section-text" style="font-size:.9rem;color:var(--text2);font-style:italic;text-align:center;line-height:1.9;padding:1rem">
+        ${summaryTone}<br><br>
+        塔罗不是预言，而是镜子。它照出的不是未来，而是你内心已经知道、但还没勇气承认的真相。✦
+      </div>
+    </div>
+  `;
+
+  html += '</div>';
+  return html;
+}
+
+function scrollToCard(index) {
+  const el = document.querySelectorAll('.reading-block')[index];
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function generateSummary(question, cards) {
+  const themes = cards.map(c => c.keywordsCN[0]).filter((v,i,a) => a.indexOf(v)===i);
+  const hasReversed = cards.some(c => c.isReversed);
+  const q = question ? `关于「${question}」` : '这次占卜';
+  let summary = `${q}，牌面呈现出「${themes.join('、')}」的能量主题。`;
+  if (hasReversed) summary += '部分逆位牌提示需要关注内在的阻碍与调整。';
+  summary += '建议你结合每张牌的具体位置含义，耐心领悟其中的指引。塔罗并非定数，而是帮助你看见当下的能量流动，从而做出更有意识的选择。✦';
+  return summary;
+}
+
+function resetReading() {
+  document.getElementById('card-stage').style.display = 'none';
+  document.getElementById('readings-output').innerHTML = '';
+  document.getElementById('action-bar').style.display = 'none';
+  drawnCards = []; drawProgress = 0; isRevealed = false;
+}
+
+/* ===== Gallery ===== */
+function renderGallery() {
+  const container = document.getElementById('gallery-content');
+  if (!container) return;
+
+  const major = TAROT_DATA.major;
+  container.innerHTML = `
+    <div style="margin-bottom:1.2rem">
+      <div style="color:var(--gold);font-size:.85rem;margin-bottom:.6rem;font-weight:500">大阿尔卡那 (22)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem">
+        ${major.map(c => `
+          <div style="background:rgba(26,26,46,.5);border:1px solid rgba(201,168,76,.12);border-radius:10px;padding:.6rem;text-align:center;cursor:pointer;transition:all .2s"
+            ontouchstart="this.style.background='rgba(26,26,46,.8)';this.style.borderColor='var(--gold)'"
+            ontouchend="this.style.background='';this.style.borderColor=''"
+            onclick="Favorites.showCardDetail(${c.id})"
+          >
+            <div style="width:40px;height:64px;border:2px solid var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1rem;background:linear-gradient(160deg,#0a1428,#160a26);margin:0 auto .3rem">✨</div>
+            <div style="font-size:.75rem;color:var(--gold);font-weight:500">${c.nameCN}</div>
+            <div style="font-size:.6rem;color:var(--text2);margin-top:.1rem">${c.name}</div>
+            <div style="margin-top:.3rem" id="gallery-fav-${c.id}"></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div>
+      <div style="color:var(--gold);font-size:.85rem;margin-bottom:.6rem;font-weight:500">小阿尔卡那 (56)</div>
+      ${['wands','cups','swords','pentacles'].map(suit => {
+        const suitInfo = TAROT_DATA.suits[suit];
+        const cards = TAROT_DATA.minor.filter(c => c.suit === suit);
+        return `
+          <div style="margin-bottom:.8rem">
+            <div style="color:var(--text2);font-size:.78rem;margin-bottom:.4rem;font-weight:500">${suitInfo.nameCN} · ${suitInfo.elementCN}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:.3rem">
+              ${cards.map(c => `
+                <div style="background:rgba(26,26,46,.5);border:1px solid rgba(201,168,76,.12);border-radius:6px;padding:.3rem .5rem;font-size:.7rem;color:var(--text2);"
+                  onclick="Favorites.showCardDetail(${c.id})"
+                >${c.nameCN}</div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  setTimeout(() => {
+    major.forEach(c => {
+      Favorites.renderFavoriteButton(c.id, 'gallery-fav-'+c.id);
+    });
+  }, 100);
+}
+</script>
+</body>
+</html>
