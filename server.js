@@ -59,7 +59,14 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let filePath = path.join(STATIC_DIR, req.url === '/' ? 'index.html' : req.url);
+  let urlPath = decodeURIComponent(req.url.split('?')[0]);
+  if (urlPath === '/' || urlPath === '') urlPath = '/index.html';
+  let filePath = path.join(STATIC_DIR, urlPath);
+  if (!filePath.startsWith(STATIC_DIR)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
