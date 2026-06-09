@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tarot-oracle
+    runtime: node
+    buildCommand: ""
+    startCommand: "node server.js"
+    envVars:
+      - key: KIMI_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production

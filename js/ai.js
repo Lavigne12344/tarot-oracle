@@ -1,7 +1,7 @@
 const AI_PROVIDERS = {
   proxy: {
     name: 'Kimi 智能解读（免填 Key）',
-    apiUrl: 'https://api.moonshot.cn/v1/chat/completions',
+    apiUrl: '/api/chat',
     model: 'moonshot-v1-8k',
     keyPrefix: '',
     storageKey: '',
@@ -16,8 +16,7 @@ const AI_PROVIDERS = {
     },
     buildHeaders() {
       return {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer sk-g0qCfVX5ekBDmzu1QsdLhW4Sn62CObY6EIBbl0eTWe4YnWLx'
+        'Content-Type': 'application/json'
       };
     },
     parseStream(data) {
