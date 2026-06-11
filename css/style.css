@@ -301,6 +301,49 @@ body::before {
   pointer-events: none;
 }
 
+/* Fan arrows */
+.fan-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(13,11,26,.85);
+  border: 1.5px solid rgba(201,168,76,.35);
+  color: var(--gold);
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  backdrop-filter: blur(6px);
+  -webkit-tap-highlight-color: transparent;
+  transition: all .2s ease;
+  padding-bottom: 2px;
+}
+.fan-arrow:hover {
+  background: rgba(201,168,76,.15);
+  border-color: var(--gold);
+}
+.fan-arrow:active {
+  transform: translateY(-50%) scale(0.92);
+  background: rgba(201,168,76,.25);
+}
+.fan-arrow-left { left: 6px; padding-right: 3px; }
+.fan-arrow-right { right: 6px; padding-left: 3px; }
+
+/* Expand touch area for fan cards */
+.fan-card::before {
+  content: '✦';
+  font-size: 1.1rem;
+  color: var(--gold);
+  opacity: .5;
+  pointer-events: none;
+}
+
 /* Shuffle animation inside fan area */
 .shuffle-anim {
   animation: deckShake .5s ease-in-out;
