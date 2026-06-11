@@ -447,7 +447,10 @@ function attachFanEvents() {
 
   area.addEventListener('touchstart', handleFanDragStart, { passive: false });
   area.addEventListener('touchmove', handleFanDragMove, { passive: false });
-  area.addEventListener('touchend', handleFanDragEnd);
+  area.addEventListener('touchend', (e) => {
+    handleFanDragEnd(e);
+    if (fanDragMoved) e.preventDefault();
+  });
   area.addEventListener('mousedown', handleFanDragStart);
 
   // Arrow buttons
@@ -532,10 +535,10 @@ function handleFanDragMove(e) {
   }
 
   // Higher sensitivity
-  fanOffset += delta * 0.6;
+  fanOffset += delta * 0.8;
 
   // Clamp offset so fan doesn't spin wildly
-  const maxOffset = 70;
+  const maxOffset = 100;
   fanOffset = Math.max(-maxOffset, Math.min(maxOffset, fanOffset));
 
   updateFanTransforms();
@@ -545,6 +548,9 @@ function handleFanDragEnd(e) {
   if (!fanDragging) return;
   fanDragging = false;
 
+  // Reset drag flag after a short delay so click events can still be ignored
+  setTimeout(() => { fanDragMoved = false; }, 80);
+
   const cards = document.querySelectorAll('.fan-card');
   if (!cards.length) return;
 
@@ -553,7 +559,7 @@ function handleFanDragEnd(e) {
   const angleStep = count > 1 ? maxAngle / (count - 1) : 0;
 
   // Apply inertia before snapping
-  const inertiaFactor = 0.4;
+  const inertiaFactor = 0.6;
   let targetOffset = fanOffset + fanVelocity * inertiaFactor;
 
   // Find nearest card to target offset
@@ -575,7 +581,7 @@ function handleFanDragEnd(e) {
 
   const startOffset = fanOffset;
   const startTime = performance.now();
-  const duration = 350;
+  const duration = 320;
 
   function snapAnimate(now) {
     const elapsed = now - startTime;
