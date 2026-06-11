@@ -235,30 +235,35 @@ body::before {
   pointer-events: none;
 }
 
-/* ========== FAN DECK (扇形滑动选择) ========== */
-.fan-deck-area {
+/* ========== FLAT DECK (平铺滑动选择) ========== */
+.flat-deck-area {
   position: relative;
   width: 100%;
-  height: 180px;
-  overflow: visible;
-  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 4px;
+  touch-action: pan-x;
   user-select: none;
   -webkit-user-select: none;
 }
-.fan-track {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  width: 0;
-  height: 0;
+.flat-track {
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 16px 40px;
+  width: 100%;
+  max-width: 340px;
 }
-.fan-card {
-  position: absolute;
-  width: 56px;
-  height: 90px;
+.flat-track::-webkit-scrollbar { display: none; }
+.flat-card {
+  flex-shrink: 0;
+  width: 60px;
+  height: 98px;
   border-radius: 8px;
   background: linear-gradient(160deg, #0a1428, #160a26, #0d1b3e);
   border: 2px solid var(--gold);
@@ -266,22 +271,20 @@ body::before {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transform-origin: bottom center;
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .35s ease, filter .35s ease, border-color .35s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,.5);
-  will-change: transform;
-  bottom: 0;
-  left: 50%;
-  margin-left: -28px;
+  scroll-snap-align: center;
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  transform: scale(0.92);
+  opacity: .55;
+  box-shadow: 0 4px 12px rgba(0,0,0,.4);
 }
-.fan-card::before {
+.flat-card::before {
   content: '✦';
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--gold);
   opacity: .5;
   pointer-events: none;
 }
-.fan-card::after {
+.flat-card::after {
   content: '';
   position: absolute;
   inset: 4px;
@@ -289,15 +292,17 @@ body::before {
   border-radius: 5px;
   pointer-events: none;
 }
-.fan-card.active {
+.flat-card.active {
   border-color: var(--gold2);
-  box-shadow: 0 8px 30px rgba(201,168,76,.25), 0 0 20px rgba(201,168,76,.12);
-  filter: brightness(1.15);
-  z-index: 100 !important;
+  box-shadow: 0 8px 25px rgba(201,168,76,.25), 0 0 15px rgba(201,168,76,.1);
+  filter: brightness(1.2);
+  transform: scale(1.1) translateY(-8px);
+  opacity: 1;
+  z-index: 10;
 }
-.fan-card.removing {
+.flat-card.removing {
   opacity: 0;
-  transform: scale(1.3) translateY(-60px) !important;
+  transform: scale(1.2) translateY(-40px) !important;
   pointer-events: none;
 }
 

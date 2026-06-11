@@ -376,222 +376,133 @@ function renderFanDeck() {
   const stage = document.getElementById('card-stage');
   const remaining = currentSpread.cardCount - drawProgress;
 
-  // Build fan deck area
   let html = '<div class="deck-progress">';
   html += `${currentSpread.nameCN} · 还需选择 ${remaining} 张牌`;
   html += '</div>';
 
-  html += '<div class="fan-deck-area" id="fan-deck-area">';
+  html += '<div class="flat-deck-area" id="flat-deck-area">';
   html += '<button class="fan-arrow fan-arrow-left" id="fan-arrow-left" aria-label="上一张">‹</button>';
-  html += '<div class="fan-track" id="fan-track"></div>';
+  html += '<div class="flat-track" id="fan-track"></div>';
   html += '<button class="fan-arrow fan-arrow-right" id="fan-arrow-right" aria-label="下一张">›</button>';
   html += '</div>';
 
-  html += `<div class="deck-hint" id="draw-hint">👆 左右滑动或点击箭头选择 · 已选 ${drawProgress}/${currentSpread.cardCount}</div>`;
+  html += `<div class="deck-hint" id="draw-hint">👆 左右滑动或点击选中 · 已选 ${drawProgress}/${currentSpread.cardCount}</div>`;
   html += '<div class="drawn-slots" id="drawn-slots"></div>';
 
   stage.innerHTML = html;
   renderEmptySlots();
-  buildFanCards();
-  attachFanEvents();
+  buildFlatCards();
+  attachFlatEvents();
 }
 
-function buildFanCards() {
+function buildFlatCards() {
   const track = document.getElementById('fan-track');
   if (!track) return;
 
   const remaining = currentSpread.cardCount - drawProgress;
-  // Show at least 8 cards, or remaining+4 to make fan look full
   fanCardsCount = Math.max(remaining + 4, 8);
 
   let cardsHTML = '';
   for (let i = 0; i < fanCardsCount; i++) {
-    cardsHTML += `<div class="fan-card" data-index="${i}"></div>`;
+    cardsHTML += `<div class="flat-card" data-index="${i}"></div>`;
   }
   track.innerHTML = cardsHTML;
 
-  fanOffset = 0;
   fanSelectedIndex = Math.floor(fanCardsCount / 2);
-  updateFanTransforms();
+  updateFlatActive();
+  scrollToFlatCard(fanSelectedIndex, false);
 }
 
-function updateFanTransforms() {
-  const cards = document.querySelectorAll('.fan-card');
-  if (!cards.length) return;
-
-  const count = cards.length;
-  const maxAngle = 100; // total spread angle in degrees
-  const angleStep = count > 1 ? maxAngle / (count - 1) : 0;
-  const radius = 90;
-
+function updateFlatActive() {
+  const cards = document.querySelectorAll('.flat-card');
   cards.forEach((card, i) => {
-    const baseAngle = -maxAngle / 2 + i * angleStep;
-    const angle = baseAngle + fanOffset;
-    const isActive = i === fanSelectedIndex;
-
-    card.classList.toggle('active', isActive);
-
-    // Active card comes forward (larger, higher)
-    const scale = isActive ? 1.12 : 1;
-    const lift = isActive ? -14 : 0;
-    const zIndex = isActive ? 100 : 50 - Math.abs(i - fanSelectedIndex);
-
-    card.style.zIndex = zIndex;
-    card.style.transform = `rotate(${angle}deg) translateY(${-radius + lift}px) scale(${scale})`;
+    card.classList.toggle('active', i === fanSelectedIndex);
   });
 }
 
-function attachFanEvents() {
-  const area = document.getElementById('fan-deck-area');
-  if (!area) return;
+function scrollToFlatCard(index, smooth = true) {
+  const track = document.getElementById('fan-track');
+  const card = document.querySelectorAll('.flat-card')[index];
+  if (!track || !card) return;
 
-  area.addEventListener('touchstart', handleFanDragStart, { passive: false });
-  area.addEventListener('touchmove', handleFanDragMove, { passive: false });
-  area.addEventListener('touchend', (e) => {
-    handleFanDragEnd(e);
-    if (fanDragMoved) e.preventDefault();
-  });
-  area.addEventListener('mousedown', handleFanDragStart);
+  const trackRect = track.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const scrollLeft = track.scrollLeft + (cardRect.left - trackRect.left) - (trackRect.width / 2) + (cardRect.width / 2);
+
+  track.scrollTo({ left: scrollLeft, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function attachFlatEvents() {
+  const track = document.getElementById('fan-track');
+  const area = document.getElementById('flat-deck-area');
+  if (!track || !area) return;
+
+  // Scroll listener: update active card based on center
+  let scrollTimeout;
+  track.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      const cards = document.querySelectorAll('.flat-card');
+      if (!cards.length) return;
+      const trackRect = track.getBoundingClientRect();
+      const center = trackRect.left + trackRect.width / 2;
+
+      let bestIndex = 0;
+      let bestDiff = Infinity;
+      cards.forEach((card, i) => {
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.left + rect.width / 2;
+        const diff = Math.abs(cardCenter - center);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestIndex = i;
+        }
+      });
+
+      if (bestIndex !== fanSelectedIndex) {
+        fanSelectedIndex = bestIndex;
+        updateFlatActive();
+      }
+    }, 80);
+  }, { passive: true });
 
   // Arrow buttons
   const leftBtn = document.getElementById('fan-arrow-left');
   const rightBtn = document.getElementById('fan-arrow-right');
-  if (leftBtn) leftBtn.addEventListener('click', (e) => { e.stopPropagation(); shiftFanSelection(-1); });
-  if (rightBtn) rightBtn.addEventListener('click', (e) => { e.stopPropagation(); shiftFanSelection(1); });
+  if (leftBtn) leftBtn.addEventListener('click', () => shiftFlatSelection(-1));
+  if (rightBtn) rightBtn.addEventListener('click', () => shiftFlatSelection(1));
 
-  // Click on a card to select it
-  area.addEventListener('click', (e) => {
-    const card = e.target.closest('.fan-card');
-    if (!card || fanDragging || fanDragMoved) return;
+  // Click on a card to select / confirm
+  track.addEventListener('click', (e) => {
+    const card = e.target.closest('.flat-card');
+    if (!card) return;
     const idx = parseInt(card.dataset.index, 10);
     if (idx === fanSelectedIndex) {
       selectFromFan();
     } else {
       fanSelectedIndex = idx;
-      updateFanTransforms();
+      updateFlatActive();
+      scrollToFlatCard(idx);
     }
   });
 
   // Keyboard support
   document.addEventListener('keydown', (e) => {
     if (drawProgress >= currentSpread.cardCount) return;
-    const deckArea = document.getElementById('fan-deck-area');
+    const deckArea = document.getElementById('flat-deck-area');
     if (!deckArea || deckArea.offsetParent === null) return;
-    if (e.key === 'ArrowLeft') { e.preventDefault(); shiftFanSelection(-1); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); shiftFanSelection(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); shiftFlatSelection(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); shiftFlatSelection(1); }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectFromFan(); }
   });
 }
 
-function shiftFanSelection(dir) {
-  const cards = document.querySelectorAll('.fan-card');
+function shiftFlatSelection(dir) {
+  const cards = document.querySelectorAll('.flat-card');
   if (!cards.length) return;
   fanSelectedIndex = Math.max(0, Math.min(cards.length - 1, fanSelectedIndex + dir));
-  const count = cards.length;
-  const maxAngle = 100;
-  const angleStep = count > 1 ? maxAngle / (count - 1) : 0;
-  const baseAngle = -maxAngle / 2 + fanSelectedIndex * angleStep;
-  const targetOffset = -baseAngle;
-
-  const startOffset = fanOffset;
-  const startTime = performance.now();
-  const duration = 300;
-
-  function shiftAnimate(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    fanOffset = startOffset + (targetOffset - startOffset) * ease;
-    updateFanTransforms();
-    if (t < 1) requestAnimationFrame(shiftAnimate);
-  }
-  requestAnimationFrame(shiftAnimate);
-}
-
-function handleFanDragStart(e) {
-  if (drawProgress >= currentSpread.cardCount) return;
-  fanDragging = true;
-  fanDragMoved = false;
-  const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-  fanStartX = clientX;
-  fanCurrentX = clientX;
-  fanLastX = clientX;
-  fanVelocity = 0;
-}
-
-function handleFanDragMove(e) {
-  if (!fanDragging) return;
-  e.preventDefault();
-  const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-  const delta = clientX - fanCurrentX;
-  fanCurrentX = clientX;
-
-  // Track velocity for inertia
-  fanVelocity = delta;
-
-  // Drag threshold: ignore tiny movements
-  if (Math.abs(clientX - fanStartX) > 6) {
-    fanDragMoved = true;
-  }
-
-  // Higher sensitivity
-  fanOffset += delta * 0.8;
-
-  // Clamp offset so fan doesn't spin wildly
-  const maxOffset = 100;
-  fanOffset = Math.max(-maxOffset, Math.min(maxOffset, fanOffset));
-
-  updateFanTransforms();
-}
-
-function handleFanDragEnd(e) {
-  if (!fanDragging) return;
-  fanDragging = false;
-
-  // Reset drag flag after a short delay so click events can still be ignored
-  setTimeout(() => { fanDragMoved = false; }, 80);
-
-  const cards = document.querySelectorAll('.fan-card');
-  if (!cards.length) return;
-
-  const count = cards.length;
-  const maxAngle = 100;
-  const angleStep = count > 1 ? maxAngle / (count - 1) : 0;
-
-  // Apply inertia before snapping
-  const inertiaFactor = 0.6;
-  let targetOffset = fanOffset + fanVelocity * inertiaFactor;
-
-  // Find nearest card to target offset
-  let bestIndex = 0;
-  let bestDiff = Infinity;
-  cards.forEach((card, i) => {
-    const baseAngle = -maxAngle / 2 + i * angleStep;
-    const finalAngle = baseAngle + targetOffset;
-    const diff = Math.abs(finalAngle);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      bestIndex = i;
-    }
-  });
-
-  fanSelectedIndex = bestIndex;
-  const baseAngle = -maxAngle / 2 + bestIndex * angleStep;
-  targetOffset = -baseAngle;
-
-  const startOffset = fanOffset;
-  const startTime = performance.now();
-  const duration = 320;
-
-  function snapAnimate(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    fanOffset = startOffset + (targetOffset - startOffset) * ease;
-    updateFanTransforms();
-    if (t < 1) requestAnimationFrame(snapAnimate);
-  }
-  requestAnimationFrame(snapAnimate);
+  updateFlatActive();
+  scrollToFlatCard(fanSelectedIndex);
 }
 
 function selectFromFan() {
@@ -606,7 +517,7 @@ function selectFromFan() {
   playSound('draw');
 
   // Find the active fan card to fly from
-  const activeCard = document.querySelector('.fan-card.active');
+  const activeCard = document.querySelector('.flat-card.active');
   const slotEl = document.getElementById('slot-' + idx);
   if (!activeCard || !slotEl) return;
 
@@ -711,7 +622,7 @@ function updateFanAfterSelect() {
   const track = document.getElementById('fan-track');
   if (!track) return;
 
-  const cards = track.querySelectorAll('.fan-card:not(.removing)');
+  const cards = track.querySelectorAll('.flat-card:not(.removing)');
   const remaining = currentSpread.cardCount - drawProgress;
 
   if (cards.length <= 1 && remaining > 0) {
